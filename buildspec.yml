@@ -1,0 +1,29 @@
+version: 0.2
+
+env:
+  variables:
+    ECR_REPO: "nodejs-app"
+    REGION: "us-east-1"
+
+phases:
+  pre_build:
+    commands:
+      - aws ecr get-login-password --region $REGION |
+        docker login --username AWS --password-stdin \
+        $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com
+
+  build:
+    commands:
+      - docker build -t $ECR_REPO:green ./app
+      - docker tag $ECR_REPO:green \
+        $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$ECR_REPO:green
+
+  post_build:
+    commands:
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$ECR_REPO:green
+      - echo "Build completed"
+
+artifacts:
+  files:
+    - appspec.yaml
+    - k8s/*
